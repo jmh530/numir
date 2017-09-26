@@ -376,8 +376,8 @@ unittest
        numpy    | numir
        ---------+---------
        np.diag  | diagonal
-       np.tril  | <WIP>
-       np.triu  | <WIP>
+       np.tril  | tril
+       np.triu  | triu
     */
 
     //  -------
@@ -388,6 +388,597 @@ unittest
     assert(a.diag == [0, 4]);
     assert(a.diag!(1)(1) == [1, 5]);
     assert(a.diag!(0)(1) == [3]);
+}
+
+/++
+Returns the lower triangular part of `matrix`.
+
+The value `k` determines which diagonals will be set to zero:
+For k = 0, (default) the main diagonal is also set to zero
+For k = 1, the first sub-diagonal will be set to zero if FewerZeroes = false, 
+otherwise if FewerZeroes = true, the main diagonal will not be set to zero
+For k > 1, fewer diagonals (or additional if FewerZeroes = true) will
+be filled with zeroes.
+
+The `FewerZeroes` parameter determines whether more (default) or less of the
+diagonals will be filled with zeroes as `k` increases.
+
+(not-checked below)
+For instance, if Upper=false, k=1, and FewerZeroes=false, then calling
+`eachTriangle` will apply to all sub-diagonals below the main diagonal. However,
+if FewerZeroes=true, then then calling `eachTriangle` will apply the
+function to the sub-diagonals, the main diagonal, and the first super-diagonal
+above the main diagonal.
+
+(not-checked below)
+By contrast, if Upper=true, k=1, and FewerZeroes=false, then calling
+`eachTriangle` will apply the function to all super-diagonals above the main
+diagonal. However, if FewerZeroes=true, then then calling `eachTriangle`
+will apply the function to the super-diagonals, the main diagonal, and the first
+sub-diagonal below the main diagonal.
+
+Params:
+    k = adjustment to diagonals (default = 0)
+    FewerZeroes = true to include fewer zeros (depending on `k`), false
+    otherwise (default)
++/
+template tril(size_t k = 0, bool FewerZeroes = false)
+{
+    import mir.ndslice.slice : SliceKind, Slice;
+
+    /++
+    Params:
+        matrix = two-dimensional slice to fill
+    +/
+    Slice!(kind, [2], Iterator) tril(SliceKind kind, Iterator)
+                                            (Slice!(kind, [2], Iterator) matrix)
+        if (is(T : DeepElementType!(Slice!(kind, [2], Iterator))))
+    {
+        import mir.ndslice.algorithm : eachTriangle;
+
+        matrix.eachTriangle!((ref a) {a = 0; }, true, k, !FewerZeroes);
+        return matrix;
+    }
+}
+
+///
+unittest
+{
+    import mir.ndslice.allocation: slice;
+    import mir.ndslice.topology: iota;
+
+    // 1 2 3
+    // 4 5 6
+    // 7 8 9
+    auto m = iota([3, 3], 1).slice;
+    m.tril;
+    assert(m == [
+        [0, 0, 0],
+        [4, 0, 0],
+        [7, 8, 0]]);
+}
+
+///
+unittest
+{
+    import mir.ndslice.allocation: slice;
+    import mir.ndslice.topology: iota;
+
+    // 1 2 3
+    // 4 5 6
+    // 7 8 9
+    auto m = iota([3, 3], 1).slice;
+    m.tril!(1, true);
+    assert(m == [
+        [1, 0, 0],
+        [4, 5, 0],
+        [7, 8, 9]]);
+}
+
+///
+unittest
+{
+    import mir.ndslice.allocation: slice;
+    import mir.ndslice.topology: iota;
+
+    // 1 2 3
+    // 4 5 6
+    // 7 8 9
+    auto m = iota([3, 3], 1).slice;
+    m.tril!1;
+    assert(m == [
+        [0, 0, 0],
+        [0, 0, 0],
+        [7, 0, 0]]);
+}
+
+unittest
+{
+    import mir.ndslice.allocation: slice;
+    import mir.ndslice.topology: iota;
+
+    // 1 2 3
+    // 4 5 6
+    // 7 8 9
+    auto m = iota([3, 3], 1).slice;
+    m.tril!(2, true);
+    assert(m == [
+        [1, 2, 0],
+        [4, 5, 6],
+        [7, 8, 9]]);
+}
+
+unittest
+{
+    import mir.ndslice.allocation: slice;
+    import mir.ndslice.topology: iota;
+
+    // 1 2 3
+    // 4 5 6
+    // 7 8 9
+    auto m = iota([3, 3], 1).slice;
+    m.tril!2;
+    assert(m == [
+        [0, 0, 0],
+        [0, 0, 0],
+        [0, 0, 0]]);
+}
+
+unittest
+{
+    import mir.ndslice.allocation: slice;
+    import mir.ndslice.topology: iota;
+
+    // 1  2  3  4
+    // 5  6  7  8
+    // 9 10 11 12
+    auto m = iota([3, 4], 1).slice;
+    m.tril;
+    assert(m == [
+        [0, 0, 0, 0],
+        [5, 0, 0, 0],
+        [9, 10, 0, 0]]);
+}
+
+unittest
+{
+    import mir.ndslice.allocation: slice;
+    import mir.ndslice.topology: iota;
+
+    // 1  2  3  4
+    // 5  6  7  8
+    // 9 10 11 12
+    auto m = iota([3, 4], 1).slice;
+    m.tril!1;
+    assert(m == [
+        [1, 0, 0, 0],
+        [5, 6, 0, 0],
+        [9, 10, 11, 0]]);
+}
+
+unittest
+{
+    import mir.ndslice.allocation: slice;
+    import mir.ndslice.topology: iota;
+
+    // 1  2  3  4
+    // 5  6  7  8
+    // 9 10 11 12
+    auto m = iota([3, 4], 1).slice;
+    m.tril!1;
+    assert(m == [
+        [0, 0, 0, 0],
+        [0, 0, 0, 0],
+        [9, 0, 0, 0]]);
+}
+
+unittest
+{
+    import mir.ndslice.allocation: slice;
+    import mir.ndslice.topology: iota;
+
+    // 1  2  3  4
+    // 5  6  7  8
+    // 9 10 11 12
+    auto m = iota([3, 4], 1).slice;
+    m.tril!(2, true);
+    assert(m == [
+        [1, 2, 0, 0],
+        [5, 6, 7, 0],
+        [9, 10, 11, 12]]);
+}
+
+unittest
+{
+    import mir.ndslice.allocation: slice;
+    import mir.ndslice.topology: iota;
+
+    // 1  2  3  4
+    // 5  6  7  8
+    // 9 10 11 12
+    auto m = iota([3, 4], 1).slice;
+    m.tril!2;
+    assert(m == [
+        [0, 0, 0, 0],
+        [0, 0, 0, 0],
+        [0, 0, 0, 0]]);
+}
+
+unittest
+{
+    import mir.ndslice.allocation: slice;
+    import mir.ndslice.topology: iota;
+
+    // 1  2  3
+    // 4  5  6
+    // 7  8  9
+    //10 11 12
+    auto m = iota([4, 3], 1).slice;
+    m.tril;
+    assert(m == [
+        [0, 0, 0],
+        [4, 0, 0],
+        [7, 8, 0],
+        [10, 11, 12]]);
+}
+
+unittest
+{
+    import mir.ndslice.allocation: slice;
+    import mir.ndslice.topology: iota;
+
+    // 1  2  3
+    // 4  5  6
+    // 7  8  9
+    //10 11 12
+    auto m = iota([4, 3], 1).slice;
+    m.tril!(1, true);
+    assert(m == [
+        [1, 0, 0],
+        [4, 5, 0],
+        [7, 8, 9],
+        [10, 11, 12]]);
+}
+
+unittest
+{
+    import mir.ndslice.allocation: slice;
+    import mir.ndslice.topology: iota;
+
+    // 1  2  3
+    // 4  5  6
+    // 7  8  9
+    //10 11 12
+    auto m = iota([4, 3], 1).slice;
+    m.tril!1;
+    assert(m == [
+        [0, 0, 0],
+        [0, 0, 0],
+        [7, 0, 0],
+        [10, 11, 0]]);
+}
+
+unittest
+{
+    import mir.ndslice.allocation: slice;
+    import mir.ndslice.topology: iota;
+
+    // 1  2  3
+    // 4  5  6
+    // 7  8  9
+    //10 11 12
+    auto m = iota([4, 3], 1).slice;
+    m.tril!(2, true);
+    assert(m == [
+        [1, 2, 0],
+        [4, 5, 6],
+        [7, 8, 9],
+        [10, 11, 12]]);
+}
+
+unittest
+{
+    import mir.ndslice.allocation: slice;
+    import mir.ndslice.topology: iota;
+
+    // 1  2  3
+    // 4  5  6
+    // 7  8  9
+    //10 11 12
+    auto m = iota([4, 3], 1).slice;
+    m.tril!2;
+    assert(m == [
+        [0, 0, 0],
+        [0, 0, 0],
+        [0, 0, 0],
+        [10, 0, 0]]);
+}
+
+/++
+Returns the upper triangular part of `matrix`.
+
+The value `k` determines which diagonals will be set to zero:
+For k = 0, (default) the main diagonal is also set to zero
+For k = 1, the first super-diagonal will be set to zero if FewerZeroes = false, 
+otherwise if FewerZeroes = true, the main diagonal will not be set to zero
+For k > 1, fewer diagonals (or additional if FewerZeroes = true) will
+be filled with zeroes.
+
+The `FewerZeroes` parameter determines whether more (default) or less of the
+diagonals will be filled with zeroes as `k` increases.
+
+(not-checked below)
+For instance, if Upper=false, k=1, and FewerZeroes=false, then calling
+`eachTriangle` will apply to all sub-diagonals below the main diagonal. However,
+if FewerZeroes=true, then then calling `eachTriangle` will apply the
+function to the sub-diagonals, the main diagonal, and the first super-diagonal
+above the main diagonal.
+
+(not-checked below)
+By contrast, if Upper=true, k=1, and FewerZeroes=false, then calling
+`eachTriangle` will apply the function to all super-diagonals above the main
+diagonal. However, if FewerZeroes=true, then then calling `eachTriangle`
+will apply the function to the super-diagonals, the main diagonal, and the first
+sub-diagonal below the main diagonal.
+
+Params:
+    k = adjustment to diagonals (default = 0)
+    FewerZeroes = true to include fewer zeros (depending on `k`), false
+    otherwise (default)
++/
+template triu(size_t k = 0, bool FewerZeroes = false)
+{
+    import mir.ndslice.slice : SliceKind, Slice;
+    
+    /++
+    Params:
+        matrix = two-dimensional slice to fill
+    +/
+    Slice!(kind, [2], Iterator) triu(SliceKind kind, Iterator)
+                                            (Slice!(kind, [2], Iterator) matrix)
+    {
+        import mir.ndslice.algorithm : eachTriangle;
+
+        matrix.eachTriangle!((ref a) {a = 0; }, false, k, !FewerZeroes);
+        return matrix;
+    }
+}
+
+///
+unittest
+{
+    import mir.ndslice.allocation: slice;
+    import mir.ndslice.topology: iota;
+
+    // 1 2 3
+    // 4 5 6
+    // 7 8 9
+    auto m = iota([3, 3], 1).slice;
+    m.triu!(0);
+    assert(m == [
+        [0, 2, 3],
+        [0, 0, 6],
+        [0, 0, 0]]);
+}
+
+///
+unittest
+{
+    import mir.ndslice.allocation: slice;
+    import mir.ndslice.topology: iota;
+
+    // 1 2 3
+    // 4 5 6
+    // 7 8 9
+    auto m = iota([3, 3], 1).slice;
+    m.triu!(1, true);
+    assert(m == [
+        [1, 2, 3],
+        [0, 5, 6],
+        [0, 0, 9]]);
+}
+
+///
+unittest
+{
+    import mir.ndslice.allocation: slice;
+    import mir.ndslice.topology: iota;
+
+    // 1 2 3
+    // 4 5 6
+    // 7 8 9
+    auto m = iota([3, 3], 1).slice;
+    m.triu!1;
+    assert(m == [
+        [0, 0, 3],
+        [0, 0, 0],
+        [0, 0, 0]]);
+}
+
+unittest
+{
+    import mir.ndslice.allocation: slice;
+    import mir.ndslice.topology: iota;
+
+    // 1 2 3
+    // 4 5 6
+    // 7 8 9
+    auto m = iota([3, 3], 1).slice;
+    m.triu!(2, true);
+    assert(m == [
+        [1, 2, 3],
+        [4, 5, 6],
+        [0, 8, 9]]);
+}
+
+unittest
+{
+    import mir.ndslice.allocation: slice;
+    import mir.ndslice.topology: iota;
+
+    // 1 2 3
+    // 4 5 6
+    // 7 8 9
+    auto m = iota([3, 3], 1).slice;
+    m.triu!2;
+    assert(m == [
+        [0, 0, 0],
+        [0, 0, 0],
+        [0, 0, 0]]);
+}
+
+unittest
+{
+    import mir.ndslice.allocation: slice;
+    import mir.ndslice.topology: iota;
+
+    // 1  2  3  4
+    // 5  6  7  8
+    // 9 10 11 12
+    auto m = iota([3, 4], 1).slice;
+    m.triu!(1, true);
+    assert(m == [
+        [1, 2, 3, 4],
+        [0, 6, 7, 8],
+        [0, 0, 11, 12]]);
+}
+
+unittest
+{
+    import mir.ndslice.allocation: slice;
+    import mir.ndslice.topology: iota;
+
+    // 1  2  3  4
+    // 5  6  7  8
+    // 9 10 11 12
+    auto m = iota([3, 4], 1).slice;
+    m.triu!1;
+    assert(m == [
+        [0, 0, 3, 4],
+        [0, 0, 0, 8],
+        [0, 0, 0, 0]]);
+}
+
+unittest
+{
+    import mir.ndslice.allocation: slice;
+    import mir.ndslice.topology: iota;
+
+    // 1  2  3  4
+    // 5  6  7  8
+    // 9 10 11 12
+    auto m = iota([3, 4], 1).slice;
+    m.triu!2;
+    assert(m == [
+        [1, 2, 3, 4],
+        [5, 6, 7, 8],
+        [0, 10, 11, 12]]);
+}
+
+unittest
+{
+    import mir.ndslice.allocation: slice;
+    import mir.ndslice.topology: iota;
+
+    // 1  2  3  4
+    // 5  6  7  8
+    // 9 10 11 12
+    auto m = iota([3, 4], 1).slice;
+    m.triu!2;
+    assert(m == [
+        [0, 0, 0, 4],
+        [0, 0, 0, 0],
+        [0, 0, 0, 0]]);
+}
+
+unittest
+{
+    import mir.ndslice.allocation: slice;
+    import mir.ndslice.topology: iota;
+
+    // 1  2  3
+    // 4  5  6
+    // 7  8  9
+    //10 11 12
+    auto m = iota([4, 3], 1).slice;
+    m.triu!0;
+    assert(m == [
+        [0, 2, 3],
+        [0, 0, 6],
+        [0, 0, 0],
+        [0, 0, 0]]);
+}
+
+unittest
+{
+    import mir.ndslice.allocation: slice;
+    import mir.ndslice.topology: iota;
+
+    // 1  2  3
+    // 4  5  6
+    // 7  8  9
+    //10 11 12
+    auto m = iota([4, 3], 1).slice;
+    m.triu!1;
+    assert(m == [
+        [1, 2, 3],
+        [0, 5, 6],
+        [0, 0, 9],
+        [0, 0, 0]]);
+}
+
+unittest
+{
+    import mir.ndslice.allocation: slice;
+    import mir.ndslice.topology: iota;
+
+    // 1  2  3
+    // 4  5  6
+    // 7  8  9
+    //10 11 12
+    auto m = iota([4, 3], 1).slice;
+    m.triu!1;
+    assert(m == [
+        [0, 0, 3],
+        [0, 0, 0],
+        [0, 0, 0],
+        [0, 0, 0]]);
+}
+
+unittest
+{
+    import mir.ndslice.allocation: slice;
+    import mir.ndslice.topology: iota;
+
+    // 1  2  3
+    // 4  5  6
+    // 7  8  9
+    //10 11 12
+    auto m = iota([4, 3], 1).slice;
+    m.triu!(2, true);
+    assert(m == [
+        [1, 2, 3],
+        [4, 5, 6],
+        [0, 8, 9],
+        [0, 0, 12]]);
+}
+
+unittest
+{
+    import mir.ndslice.allocation: slice;
+    import mir.ndslice.topology: iota;
+
+    // 1  2  3
+    // 4  5  6
+    // 7  8  9
+    //10 11 12
+    auto m = iota([4, 3], 1).slice;
+    m.triu!2;
+    assert(m == [
+        [0, 0, 0],
+        [0, 0, 0],
+        [0, 0, 0],
+        [0, 0, 0]]);
 }
 
 /++ create new diagonal matrix +/
