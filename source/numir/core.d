@@ -393,52 +393,23 @@ unittest
 /++
 Returns the lower triangular part of `matrix`.
 
-The value `k` determines which diagonals will be set to zero:
-For k = 0, (default) the main diagonal is also set to zero
-For k = 1, the first sub-diagonal will be set to zero if FewerZeroes = false, 
-otherwise if FewerZeroes = true, the main diagonal will not be set to zero
-For k > 1, fewer diagonals (or additional if FewerZeroes = true) will
-be filled with zeroes.
-
-The `FewerZeroes` parameter determines whether more (default) or less of the
-diagonals will be filled with zeroes as `k` increases.
-
-(not-checked below)
-For instance, if Upper=false, k=1, and FewerZeroes=false, then calling
-`eachTriangle` will apply to all sub-diagonals below the main diagonal. However,
-if FewerZeroes=true, then then calling `eachTriangle` will apply the
-function to the sub-diagonals, the main diagonal, and the first super-diagonal
-above the main diagonal.
-
-(not-checked below)
-By contrast, if Upper=true, k=1, and FewerZeroes=false, then calling
-`eachTriangle` will apply the function to all super-diagonals above the main
-diagonal. However, if FewerZeroes=true, then then calling `eachTriangle`
-will apply the function to the super-diagonals, the main diagonal, and the first
-sub-diagonal below the main diagonal.
+The value `k` determines which diagonals will be set to zero.
+For k = 0, the main diagonal is also set to zero.
+For k = 1 (default), only the non-main diagonals above the main diagonal will 
+be set to zero.
+For k > 1, fewer diagonals above the main diagonal will be set to zero.
+For k < 0, more diagonals below the main diagonal will be set to zero.
 
 Params:
-    k = adjustment to diagonals (default = 0)
-    FewerZeroes = true to include fewer zeros (depending on `k`), false
-    otherwise (default)
+    matrix = two-dimensional ndslice
+    k = adjustment to diagonals (default = 1)
 +/
-template tril(size_t k = 0, bool FewerZeroes = false)
+void tril(SliceKind kind, Iterator)
+                           (Slice!(kind, [2], Iterator) matrix, ptrdiff_t k = 1)
 {
-    import mir.ndslice.slice : SliceKind, Slice;
+    import mir.ndslice.algorithm : eachUpper;
 
-    /++
-    Params:
-        matrix = two-dimensional slice to fill
-    +/
-    Slice!(kind, [2], Iterator) tril(SliceKind kind, Iterator)
-                                            (Slice!(kind, [2], Iterator) matrix)
-        if (is(T : DeepElementType!(Slice!(kind, [2], Iterator))))
-    {
-        import mir.ndslice.algorithm : eachTriangle;
-
-        matrix.eachTriangle!((ref a) {a = 0; }, true, k, !FewerZeroes);
-        return matrix;
-    }
+    matrix.eachUpper!((ref a) {a = 0; })(k);
 }
 
 ///
@@ -451,7 +422,7 @@ unittest
     // 4 5 6
     // 7 8 9
     auto m = iota([3, 3], 1).slice;
-    m.tril;
+    m.tril(0);
     assert(m == [
         [0, 0, 0],
         [4, 0, 0],
@@ -468,7 +439,7 @@ unittest
     // 4 5 6
     // 7 8 9
     auto m = iota([3, 3], 1).slice;
-    m.tril!(1, true);
+    m.tril;
     assert(m == [
         [1, 0, 0],
         [4, 5, 0],
@@ -485,7 +456,7 @@ unittest
     // 4 5 6
     // 7 8 9
     auto m = iota([3, 3], 1).slice;
-    m.tril!1;
+    m.tril(-1);
     assert(m == [
         [0, 0, 0],
         [0, 0, 0],
@@ -501,7 +472,7 @@ unittest
     // 4 5 6
     // 7 8 9
     auto m = iota([3, 3], 1).slice;
-    m.tril!(2, true);
+    m.tril(2);
     assert(m == [
         [1, 2, 0],
         [4, 5, 6],
@@ -517,7 +488,7 @@ unittest
     // 4 5 6
     // 7 8 9
     auto m = iota([3, 3], 1).slice;
-    m.tril!2;
+    m.tril(-2);
     assert(m == [
         [0, 0, 0],
         [0, 0, 0],
@@ -533,7 +504,7 @@ unittest
     // 5  6  7  8
     // 9 10 11 12
     auto m = iota([3, 4], 1).slice;
-    m.tril;
+    m.tril(0);
     assert(m == [
         [0, 0, 0, 0],
         [5, 0, 0, 0],
@@ -549,7 +520,7 @@ unittest
     // 5  6  7  8
     // 9 10 11 12
     auto m = iota([3, 4], 1).slice;
-    m.tril!1;
+    m.tril;
     assert(m == [
         [1, 0, 0, 0],
         [5, 6, 0, 0],
@@ -565,7 +536,7 @@ unittest
     // 5  6  7  8
     // 9 10 11 12
     auto m = iota([3, 4], 1).slice;
-    m.tril!1;
+    m.tril(-1);
     assert(m == [
         [0, 0, 0, 0],
         [0, 0, 0, 0],
@@ -581,7 +552,7 @@ unittest
     // 5  6  7  8
     // 9 10 11 12
     auto m = iota([3, 4], 1).slice;
-    m.tril!(2, true);
+    m.tril(2);
     assert(m == [
         [1, 2, 0, 0],
         [5, 6, 7, 0],
@@ -597,7 +568,7 @@ unittest
     // 5  6  7  8
     // 9 10 11 12
     auto m = iota([3, 4], 1).slice;
-    m.tril!2;
+    m.tril(-2);
     assert(m == [
         [0, 0, 0, 0],
         [0, 0, 0, 0],
@@ -614,7 +585,7 @@ unittest
     // 7  8  9
     //10 11 12
     auto m = iota([4, 3], 1).slice;
-    m.tril;
+    m.tril(0);
     assert(m == [
         [0, 0, 0],
         [4, 0, 0],
@@ -632,7 +603,7 @@ unittest
     // 7  8  9
     //10 11 12
     auto m = iota([4, 3], 1).slice;
-    m.tril!(1, true);
+    m.tril;
     assert(m == [
         [1, 0, 0],
         [4, 5, 0],
@@ -650,7 +621,7 @@ unittest
     // 7  8  9
     //10 11 12
     auto m = iota([4, 3], 1).slice;
-    m.tril!1;
+    m.tril(-1);
     assert(m == [
         [0, 0, 0],
         [0, 0, 0],
@@ -668,7 +639,7 @@ unittest
     // 7  8  9
     //10 11 12
     auto m = iota([4, 3], 1).slice;
-    m.tril!(2, true);
+    m.tril(2);
     assert(m == [
         [1, 2, 0],
         [4, 5, 6],
@@ -686,7 +657,7 @@ unittest
     // 7  8  9
     //10 11 12
     auto m = iota([4, 3], 1).slice;
-    m.tril!2;
+    m.tril(-2);
     assert(m == [
         [0, 0, 0],
         [0, 0, 0],
@@ -697,51 +668,23 @@ unittest
 /++
 Returns the upper triangular part of `matrix`.
 
-The value `k` determines which diagonals will be set to zero:
-For k = 0, (default) the main diagonal is also set to zero
-For k = 1, the first super-diagonal will be set to zero if FewerZeroes = false, 
-otherwise if FewerZeroes = true, the main diagonal will not be set to zero
-For k > 1, fewer diagonals (or additional if FewerZeroes = true) will
-be filled with zeroes.
-
-The `FewerZeroes` parameter determines whether more (default) or less of the
-diagonals will be filled with zeroes as `k` increases.
-
-(not-checked below)
-For instance, if Upper=false, k=1, and FewerZeroes=false, then calling
-`eachTriangle` will apply to all sub-diagonals below the main diagonal. However,
-if FewerZeroes=true, then then calling `eachTriangle` will apply the
-function to the sub-diagonals, the main diagonal, and the first super-diagonal
-above the main diagonal.
-
-(not-checked below)
-By contrast, if Upper=true, k=1, and FewerZeroes=false, then calling
-`eachTriangle` will apply the function to all super-diagonals above the main
-diagonal. However, if FewerZeroes=true, then then calling `eachTriangle`
-will apply the function to the super-diagonals, the main diagonal, and the first
-sub-diagonal below the main diagonal.
+The value `k` determines which diagonals will be set to zero.
+For k = 0, the main diagonal is also set to zero.
+For k = 1 (default), only the non-main diagonals below the main diagonal will 
+be set to zero.
+For k > 1, fewer diagonals below the main diagonal will be set to zero.
+For k < 0, more diagonals above the main diagonal will be set to zero.
 
 Params:
-    k = adjustment to diagonals (default = 0)
-    FewerZeroes = true to include fewer zeros (depending on `k`), false
-    otherwise (default)
+    matrix = two-dimensional ndslice
+    k = adjustment to diagonals (default = 1)
 +/
-template triu(size_t k = 0, bool FewerZeroes = false)
+void triu(SliceKind kind, Iterator)
+                           (Slice!(kind, [2], Iterator) matrix, ptrdiff_t k = 1)
 {
-    import mir.ndslice.slice : SliceKind, Slice;
-    
-    /++
-    Params:
-        matrix = two-dimensional slice to fill
-    +/
-    Slice!(kind, [2], Iterator) triu(SliceKind kind, Iterator)
-                                            (Slice!(kind, [2], Iterator) matrix)
-    {
-        import mir.ndslice.algorithm : eachTriangle;
+    import mir.ndslice.algorithm : eachLower;
 
-        matrix.eachTriangle!((ref a) {a = 0; }, false, k, !FewerZeroes);
-        return matrix;
-    }
+    matrix.eachLower!((ref a) {a = 0; })(k);
 }
 
 ///
@@ -754,7 +697,7 @@ unittest
     // 4 5 6
     // 7 8 9
     auto m = iota([3, 3], 1).slice;
-    m.triu!(0);
+    m.triu(0);
     assert(m == [
         [0, 2, 3],
         [0, 0, 6],
@@ -771,7 +714,7 @@ unittest
     // 4 5 6
     // 7 8 9
     auto m = iota([3, 3], 1).slice;
-    m.triu!(1, true);
+    m.triu;
     assert(m == [
         [1, 2, 3],
         [0, 5, 6],
@@ -788,7 +731,7 @@ unittest
     // 4 5 6
     // 7 8 9
     auto m = iota([3, 3], 1).slice;
-    m.triu!1;
+    m.triu(-1);
     assert(m == [
         [0, 0, 3],
         [0, 0, 0],
@@ -804,7 +747,7 @@ unittest
     // 4 5 6
     // 7 8 9
     auto m = iota([3, 3], 1).slice;
-    m.triu!(2, true);
+    m.triu(2);
     assert(m == [
         [1, 2, 3],
         [4, 5, 6],
@@ -820,7 +763,7 @@ unittest
     // 4 5 6
     // 7 8 9
     auto m = iota([3, 3], 1).slice;
-    m.triu!2;
+    m.triu(-2);
     assert(m == [
         [0, 0, 0],
         [0, 0, 0],
@@ -836,7 +779,7 @@ unittest
     // 5  6  7  8
     // 9 10 11 12
     auto m = iota([3, 4], 1).slice;
-    m.triu!(1, true);
+    m.triu(1);
     assert(m == [
         [1, 2, 3, 4],
         [0, 6, 7, 8],
@@ -852,7 +795,7 @@ unittest
     // 5  6  7  8
     // 9 10 11 12
     auto m = iota([3, 4], 1).slice;
-    m.triu!1;
+    m.triu(-1);
     assert(m == [
         [0, 0, 3, 4],
         [0, 0, 0, 8],
@@ -868,7 +811,7 @@ unittest
     // 5  6  7  8
     // 9 10 11 12
     auto m = iota([3, 4], 1).slice;
-    m.triu!2;
+    m.triu(2);
     assert(m == [
         [1, 2, 3, 4],
         [5, 6, 7, 8],
@@ -884,7 +827,7 @@ unittest
     // 5  6  7  8
     // 9 10 11 12
     auto m = iota([3, 4], 1).slice;
-    m.triu!2;
+    m.triu(-2);
     assert(m == [
         [0, 0, 0, 4],
         [0, 0, 0, 0],
@@ -901,7 +844,7 @@ unittest
     // 7  8  9
     //10 11 12
     auto m = iota([4, 3], 1).slice;
-    m.triu!0;
+    m.triu(0);
     assert(m == [
         [0, 2, 3],
         [0, 0, 6],
@@ -919,7 +862,7 @@ unittest
     // 7  8  9
     //10 11 12
     auto m = iota([4, 3], 1).slice;
-    m.triu!1;
+    m.triu;
     assert(m == [
         [1, 2, 3],
         [0, 5, 6],
@@ -937,7 +880,7 @@ unittest
     // 7  8  9
     //10 11 12
     auto m = iota([4, 3], 1).slice;
-    m.triu!1;
+    m.triu(-1);
     assert(m == [
         [0, 0, 3],
         [0, 0, 0],
@@ -955,7 +898,7 @@ unittest
     // 7  8  9
     //10 11 12
     auto m = iota([4, 3], 1).slice;
-    m.triu!(2, true);
+    m.triu(2);
     assert(m == [
         [1, 2, 3],
         [4, 5, 6],
@@ -973,7 +916,7 @@ unittest
     // 7  8  9
     //10 11 12
     auto m = iota([4, 3], 1).slice;
-    m.triu!2;
+    m.triu(-2);
     assert(m == [
         [0, 0, 0],
         [0, 0, 0],
